@@ -500,10 +500,12 @@ namespace mbit_Robot {
     }
     export enum enPos {
 
-        //% blockId="LeftState" block="left state"
-        LeftState = 0,
-        //% blockId="RightState" block="right state"
-        RightState = 1
+        //% blockId="forward" block="forward"
+        forward = 1,
+        //% blockId="reverse" block="reverse"
+        reverse = 2,
+        //% blockId="stop" block="stop"
+        stop = 3
     }
 
     export enum enLineState {
@@ -525,9 +527,14 @@ namespace mbit_Robot {
     
     export enum enServo {
         
-        S1 = 1,
+        S1 = 0,
         S2,
         S3
+    }
+	
+	export enum enMotors {
+		M1 = 12,
+		M2 = 14
     }
     export enum CarState {
         //% blockId="Car_Run" block="forward"
@@ -602,159 +609,85 @@ namespace mbit_Robot {
         pins.i2cWriteBuffer(PCA9685_ADD, buf);
     }
 
+	function stopMotor(index: number) {
+        setPwm(index, 0, 0);
+        setPwm(index + 1, 0, 0);
+    }
+	
+	export function MotorRun(index: enMotors, speed: number): void {
+        if (!initialized) {
+            initPCA9685();
+        }
+        speed = Math.map(speed, 0, 255, 0, 4095); // map 255 to 4095
+        if (speed >= 4095) {
+            speed = 4095;
+        }
+        if (speed <= -4095) {
+            speed = -4095;
+        }
 
+        let a = index;
+        let b = index + 1;
+
+        if (a > 13) {
+            if (speed >= 0) {
+                setPwm(a, 0, speed);
+                setPwm(b, 0, 0);
+            } else {
+                setPwm(a, 0, 0);
+                setPwm(b, 0, -speed);
+            }
+        }
+        else {
+            if (speed >= 0) {
+                setPwm(b, 0, speed);
+                setPwm(a, 0, 0);
+            } else {
+                setPwm(b, 0, 0);
+                setPwm(a, 0, -speed);
+            }
+        }
+    }
+	
     function Car_run(speed1: number, speed2: number) {
-
-        speed1 = speed1 * 16; // map 350 to 4096
-        speed2 = speed2 * 16;
-        if (speed1 >= 4096) {
-            speed1 = 4095
-        }
-        if (speed2 >= 4096) {
-            speed2 = 4095
-        }
-
-        setPwm(12, 0, speed1);
-        setPwm(13, 0, 0);
-
-        setPwm(15, 0, speed2);
-        setPwm(14, 0, 0);
-        //pins.digitalWritePin(DigitalPin.P16, 1);
-       // pins.analogWritePin(AnalogPin.P1, 1023-speed); //速度控制
-
-       // pins.analogWritePin(AnalogPin.P0, speed);//速度控制
-       // pins.digitalWritePin(DigitalPin.P8, 0);
+		MotorRun(enMotors.M1, speed1);
+        MotorRun(enMotors.M2, speed2);
     }
 
     function Car_back(speed1: number, speed2: number) {
-
-        speed1 = speed1 * 16; // map 350 to 4096
-        speed2 = speed2 * 16;
-        if (speed1 >= 4096) {
-            speed1 = 4095
-        }
-        if (speed2 >= 4096) {
-            speed2 = 4095
-        }
-        setPwm(12, 0, 0);
-        setPwm(13, 0, speed1);
-
-        setPwm(15, 0, 0);
-        setPwm(14, 0, speed2);
-
-        //pins.digitalWritePin(DigitalPin.P16, 0);
-        //pins.analogWritePin(AnalogPin.P1, speed); //速度控制
-
-        //pins.analogWritePin(AnalogPin.P0, 1023 - speed);//速度控制
-        //pins.digitalWritePin(DigitalPin.P8, 1);
+		MotorRun(enMotors.M1, -speed1);
+        MotorRun(enMotors.M2, -speed2);
     }
 
     function Car_left(speed1: number, speed2: number) {
-
-        speed1 = speed1 * 16; // map 350 to 4096
-        speed2 = speed2 * 16;
-        if (speed1 >= 4096) {
-            speed1 = 4095
-        }
-        if (speed2 >= 4096) {
-            speed2 = 4095
-        }
-        
-        setPwm(12, 0, speed1);
-        setPwm(13, 0, 0);
-
-        setPwm(15, 0, speed2);
-        setPwm(14, 0, 0);
-
-        //pins.analogWritePin(AnalogPin.P0, speed);
-        //pins.digitalWritePin(DigitalPin.P8, 0);
-
-        //pins.digitalWritePin(DigitalPin.P16, 0);
-        //pins.digitalWritePin(DigitalPin.P1, 0);
+		MotorRun(enMotors.M1, 0);
+        MotorRun(enMotors.M2, speed);
     }
 
     function Car_right(speed1: number, speed2: number) {
-
-        speed1 = speed1 * 16; // map 350 to 4096
-        speed2 = speed2 * 16;
-        if (speed1 >= 4096) {
-            speed1 = 4095
-        }
-        if (speed2 >= 4096) {
-            speed2 = 4095
-        }
-        
-        setPwm(12, 0, speed1);
-        setPwm(13, 0, 0);
-
-        setPwm(15, 0, speed2);
-        setPwm(14, 0, 0);
-        //pins.digitalWritePin(DigitalPin.P0, 0);
-        //pins.digitalWritePin(DigitalPin.P8, 0);
-
-        //pins.digitalWritePin(DigitalPin.P16, 1);
-       // pins.analogWritePin(AnalogPin.P1, 1023 - speed);
+		MotorRun(enMotors.M1, speed);
+        MotorRun(enMotors.M2, 0);
     }
 
     function Car_stop() {
-       
         setPwm(12, 0, 0);
         setPwm(13, 0, 0);
 
         setPwm(15, 0, 0);
         setPwm(14, 0, 0);
-        //pins.digitalWritePin(DigitalPin.P0, 0);
-        //pins.digitalWritePin(DigitalPin.P8, 0);
-        //pins.digitalWritePin(DigitalPin.P16, 0);
-        //pins.digitalWritePin(DigitalPin.P1, 0);
     }
 
     function Car_spinleft(speed1: number, speed2: number) {
-
-        speed1 = speed1 * 16; // map 350 to 4096
-        speed2 = speed2 * 16;
-        if (speed1 >= 4096) {
-            speed1 = 4095
-        }
-        if (speed2 >= 4096) {
-            speed2 = 4095
-        }        
-        
-        setPwm(12, 0, 0);
-        setPwm(13, 0, speed1);
-
-        setPwm(15, 0, speed2);
-        setPwm(14, 0, 0);
-
-        //pins.analogWritePin(AnalogPin.P0, speed);
-        //pins.digitalWritePin(DigitalPin.P8, 0);
-
-        //pins.digitalWritePin(DigitalPin.P16, 0);
-        //pins.analogWritePin(AnalogPin.P1, speed);
+		MotorRun(enMotors.M1, -speed1);
+        MotorRun(enMotors.M2, speed2);
     } 
 
     function Car_spinright(speed1: number, speed2: number) {
-
-        speed1 = speed1 * 16; // map 350 to 4096
-        speed2 = speed2 * 16;
-        if (speed1 >= 4096) {
-            speed1 = 4095
-        }
-        if (speed2 >= 4096) {
-            speed2 = 4095
-        }      
-        setPwm(12, 0, speed1);
-        setPwm(13, 0, 0);
-
-        setPwm(15, 0, 0);
-        setPwm(14, 0, speed2);
-        //pins.analogWritePin(AnalogPin.P0, 1023-speed);
-        //pins.digitalWritePin(DigitalPin.P8, 1);
-
-        //pins.digitalWritePin(DigitalPin.P16, 1);
-        //pins.analogWritePin(AnalogPin.P1, 1023-speed);
+		MotorRun(enMotors.M1, speed1);
+        MotorRun(enMotors.M2, -speed2);
 
     }
+}
 
     /**
      * *****************************************************************
@@ -1027,6 +960,8 @@ namespace mbit_Robot {
             case CarState.Car_SpinRight: Car_spinright(255, 255); break;
         }
     }
+	
+	
     //% blockId=mbit_CarCtrlSpeed block="CarCtrlSpeed|%index|speed %speed"
     //% weight=92
     //% blockGap=10
@@ -1044,7 +979,7 @@ namespace mbit_Robot {
             case CarState.Car_SpinRight: Car_spinright(speed, speed); break;
         }
     }
-/*
+
     //% blockId=mbit_CarCtrlSpeed2 block="CarCtrlSpeed2|%index|speed1 %speed1|speed2 %speed2"
     //% weight=91
     //% blockGap=10
@@ -1062,5 +997,5 @@ namespace mbit_Robot {
             case CarState.Car_SpinRight: Car_spinright(speed1, speed2); break;
         }
     }
-*/
+
 }
